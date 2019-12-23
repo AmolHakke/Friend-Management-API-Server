@@ -1,0 +1,1 @@
+start cmd.exe /k go run main.go
