@@ -1,1 +1,1 @@
-start cmd.exe /k go run main.go
+start cmd.exe /k go run API_Server.go
