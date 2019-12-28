@@ -7,423 +7,266 @@ import (
 	"encoding/json"
 	 "github.com/gorilla/mux"
 	 "io/ioutil"
-	 "bytes"
-	 "github.com/mcnijman/go-emailaddress"
+	 //"bytes"
+	 //"github.com/mcnijman/go-emailaddress"
+	 //"gopkg.in/matryer/respond.v1"
 	 	 
 )   
+// struct section
+type FriendsRequest struct {
+	Friends []string `json:"friends"`
+}
+
+type FriendListRequest struct {
+	Email string `json:"email"`
+}
 
 // Transaction Friend List
-type FirendList struct {
+type FriendList struct {
 	
     EmailID string `json:"EmailID"`
-	FrndEmailID string `json:"FrndEmailID"` 
+	FriendEmailID string `json:"FriendEmailID"` 
 	
     
-} 
-
-type FirendUpdateubscriptionList struct {
-	
-    Sender string `json:"Sender"`
-	Text string `json:"Text"` 
-	
-    
-} 
-type FirendSubscriptionList struct {
-	
-		RequestorEmailID string `json:"RequestorEmailID"`
-		TargetEmailID string `json:"TargetEmailID"` 	
-		
-	}
-
-	type FirendBlockedSubscriptionList struct {
-	
-		RequestorEmailID string `json:"RequestorEmailID"`
-		TargetEmailID string `json:"TargetEmailID"` 	
-		
-	}
-// Custom response JSON object structure  
-type FriendJsonObj struct {
-	Success    string
-	Friend   []string
-	Count      int64  `json:"Count"`	 
-	
-}  	
-type CreateFriendJsonObj struct {  //Structure for Json Object response
-	Success bool
+}
+type ReturnStatus struct {
+	Success bool `json:"success"`
 }
 
-var Firends []FirendList  //Array for Friend 
-var FirendSubscription []FirendSubscriptionList  //Array for Firend Subscription  
-var FirendBlockedSubscription []FirendBlockedSubscriptionList  //Array for Friend Blocked Subscription
-var FirendSubscriptionUpdate []FirendUpdateubscriptionList 
-//Getting Common friends 
-func Intersection(a, b []string) (c []string) {
-	m := make(map[string]bool)
+type ReturnFriendList struct {
+	Success bool     `json:"success"`
+	Friends []string `json:"friends"`
+	Count   int      `json:"count"`
+}
 
-	for _, item := range a {
-			m[item] = true
-	}
+type Subscription struct {
+	Requestor string `json:"requestor"`
+	Target    string `json:"target"`
+}
 
-	for _, item := range b {
-			if _, ok := m[item]; ok {
-					c = append(c, item)
-			}
-	}
-	return
+type Updates struct {
+	Sender string `json:"sender"`
+	Text   string `json:"text"`
+}
+
+type UpdatesResponse struct {
+	Success    bool     `json:"success"`
+	Recipients []string `json:"recipients"`
 }
 
 
+var friendsRequest FriendsRequest
+var friendsListRequest FriendListRequest
+var FriendsList []FriendList
+var subscription Subscription
+var updates Updates
 
-
-
-func returnCommonFriendList(w http.ResponseWriter, r *http.Request){
-
-	FriendArr:=[]string{}
-	FriendArr_1:=[]string{}
-	// Common_FriendArr:=[]string{}
-	fmt.Println("Endpoint Hit: returnCommonFriendList")
-
-	decoder := json.NewDecoder(r.Body)
-			var data FirendList
-			err := decoder.Decode(&data)
-			if err != nil 	{
-				panic(err)
-			}
-			fmt.Println(data.EmailID)
-
-			for _, frned := range Firends {
-				if frned.EmailID == data.EmailID {  //checking  email id is available or not in list		
-					
-					FriendArr = append(FriendArr,frned.FrndEmailID)  //Pushing into array		 
-					
-				}	
-				
-				if frned.EmailID == data.FrndEmailID {  //checking  email id is available or not in list		
-					
-					FriendArr_1 = append(FriendArr_1,frned.FrndEmailID)  //Pushing into array		 
-					
-				}
-			}
-			
-			var result []string
-			result=Intersection(FriendArr_1 , FriendArr)
-			fmt.Println(FriendArr)
-			fmt.Println(FriendArr_1)
-			fmt.Println("Common Friends")
-			 fmt.Println(result) 			//Calling Intersection function  for  getting common friends
-
-			// Common_FriendArr = intersection(FriendArr, FriendArr_1)
-
-			var FrndCommonCount int64=int64(len(result))
-
-			FrndCommonJsonOBJ := FriendJsonObj{
-				Success:    "True",
-				Friend:result  ,
-				Count: FrndCommonCount,
-				
-				
-			}
-			 
-			var jsonData []byte
-			jsonData, err1 := json.Marshal(FrndCommonJsonOBJ)
-			if err1 != nil {  								//error handling
-				log.Println(err1)
-				log.Println(jsonData)
-				json.NewEncoder(w).Encode(err1)
-			}else{ 											//error is not occured 
-				json.NewEncoder(w).Encode(FrndCommonJsonOBJ)		//Display JSON response in browser
-			} 
-
-			fmt.Println(FrndCommonJsonOBJ)
-
-
+//Sample homepage function to test that API server is working
+func homePage(w http.ResponseWriter, r *http.Request){
+    fmt.Fprintf(w, "Welcome to the HomePage!")
+    fmt.Println("Endpoint Hit: homePage")
 }
 
-		// var Persons []PersonList 
-		//return Friend List of specific person
-		func returnPersonFriendList(w http.ResponseWriter, r *http.Request){
-			// name:="Apple"
-			FriendArr:=[]string{}
-			
-			
-				
-			fmt.Println("Endpoint Hit: returnPersonFriendList")
-				decoder := json.NewDecoder(r.Body)
-			var data FirendList
-			err := decoder.Decode(&data)
-			if err != nil 	{
-				panic(err)
-			}
-			fmt.Println(data.EmailID)
-			//  var s []string
-			for _, frned := range Firends {
-				if frned.EmailID == data.EmailID {  //checking  email id is available or not in list		
-					
-					FriendArr = append(FriendArr,frned.FrndEmailID)  //Pushing into array		 
-					
-				}		
-			}
-			var FrndCount int64=int64(len(FriendArr))
-
-			FrndJsonOBJ := FriendJsonObj{
-				Success:    "True",
-				Friend:FriendArr  ,
-				Count: FrndCount,
-				
-				
-			}
-			
-			var jsonData []byte
-			jsonData, err1 := json.Marshal(FrndJsonOBJ)
-			if err1 != nil {  								//error handling
-				log.Println(err1)
-				log.Println(jsonData)
-				json.NewEncoder(w).Encode(err1)
-			}else{ 											//error is not occured 
-				json.NewEncoder(w).Encode(FrndJsonOBJ)		//Display JSON response in browser
-			} 
-			
-		}
-		
-		func returnUpdateFriendList(w http.ResponseWriter, r *http.Request){
-			// name:="Apple"
-			// FriendArr:=[]string{}
-			
-			 
-
-// text := []byte(`Send me an email at foo@bar.com or foo@domain.fakesuffix.`)
-
-
-				
-			fmt.Println("Endpoint Hit: returnUpdateFriendList")
-				decoder := json.NewDecoder(r.Body)
-			var data FirendUpdateubscriptionList
-			err := decoder.Decode(&data)
-			if err != nil 	{
-				panic(err)
-			}
-			if(data.Text!=""){
-				fmt.Println(data.Text)
-			} 
-
-			text := []byte(data.Text)
-validateHost := false
-
-emails := emailaddress.Find(text, validateHost)
-// fmt.Println(emails)
-for _, e := range emails {
-	//FirendSubscriptionList=append(FirendSubscriptionList,data.Sender,e)
-	fmt.Println(e)
-	
-}
-//json.NewEncoder(w).Encode(FirendSubscriptionList)
-
-//
-// 			// else{
-			// 	fmt.Println(data.Text)
-			// }
-				
-			
-			// 	decoder1 := json.NewDecoder(r.Body)
-			// var data1 FirendList
-			// err2 := decoder1.Decode(&data1)
-			// if err2 != nil 	{
-			// 	panic(err2)
-			// }
-			 
-
-			// fmt.Println(data1.EmailID)
-			// //  var s []string
-			// for _, frned := range FirendSubscription {
-			// 	// if frned.RequestorEmailID == data.EmailID {  //checking  email id is available or not in list		
-					
-			// 		FriendArr = append(FriendArr,frned.TargetEmailID)  //Pushing into array		 
-					
-			// 	// }		
-			// }
-			// var FrndCount int64=int64(len(FriendArr))
-			// json.NewEncoder(w).Encode(FirendSubscription)
-			// FrndJsonOBJ := FriendJsonObj{
-			// 	Success:    "True",
-			// 	Friend:FriendArr  ,
-			// 	Count: FrndCount,
-				
-				
-			// }
-			
-			// var jsonData []byte
-			// jsonData, err1 := json.Marshal(FrndJsonOBJ)
-			// if err1 != nil {  								//error handling
-			// 	log.Println(err1)
-			// 	log.Println(jsonData)
-			// 	json.NewEncoder(w).Encode(err1)
-			// }else{ 											//error is not occured 
-			// 	json.NewEncoder(w).Encode(FrndJsonOBJ)		//Display JSON response in browser
-			// } 
-			
-		}
-
-//Create New Friend
-func create_NewFirend(w http.ResponseWriter, r *http.Request) {
-
-	type CreateFriendJsonObj struct {  //Structure for Json Object response
-		Success bool
+// Create new friend connection
+func createFriendsConnection(w http.ResponseWriter, r *http.Request) {
+    // get the body of our POST request
+    // unmarshal this into a new FriendRequest struct
+    // append this to our FriendList array. 
+	w.Header().Set("Content-Type", "application/json")
+    fmt.Println("Endpoint Hit: FriendsConnection")
+    var returnStatus ReturnStatus	
+    reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Body read error, %v", err)
+		returnStatus = ReturnStatus{false}
+		json.NewEncoder(w).Encode(returnStatus)
+		w.WriteHeader(500) // Return 500 Internal Server Error.
+		return
 	}
-
-	
-	var isSuccess bool=false
-	fmt.Println("Endpoint Hit: create_NewFirend")	
-    reqBody, _ := ioutil.ReadAll(r.Body)           // reading the request body
-    var CreateNewFriend FirendList 
-    json.Unmarshal(reqBody, &CreateNewFriend) 		//unmarshing body to JSON
-    
-	var isPersonValid bool =true 					//later we have to check person is valid or not	
-	
-	if(isPersonValid)	{
-		Firends = append(Firends, CreateNewFriend) // Create new friend
-	  json.NewEncoder(w).Encode(Firends)  
-	 isSuccess=true 
-	//fmt.Println(CreateNewFriend) 			// Display on Command prompt
-			 
-
-	}
-
-	CreateFrndJsonOBJ := CreateFriendJsonObj{
-		Success : isSuccess,			 
-		}
-
-		json.NewEncoder(w).Encode(CreateFrndJsonOBJ) // Display in Browser
-		// json.NewEncoder(w).Encode(CreateNewFriend)
+    var friend FriendList 
+	friendsRequest = FriendsRequest{}
+    json.Unmarshal(reqBody, &friendsRequest)
 	 
-// 	fmt.Println("Endpoint Hit: END")
-   
-} 
-
-func Create_Subscription(w http.ResponseWriter, r *http.Request) {
-
+	// Validations
+    // Validate that email ids in proper format
+    // Validate whether FriendRequest is not empty
+    // Check whether they are friends already
+     	
+    // update our global FriendList array to include
+    // our new friend connection
+	friend.EmailID  = friendsRequest.Friends[0]
+	friend.FriendEmailID = friendsRequest.Friends[1] 
+    FriendsList = append(FriendsList, friend)
 	
-	type CreateFriendJsonObj struct {  //Structure for Json Object response
-		Success bool
+	
+	returnStatus = ReturnStatus{true}
+    json.NewEncoder(w).Encode(returnStatus)
+	
+}
+
+// Get Friend List
+func getFriendList(w http.ResponseWriter, r *http.Request) {
+    // get the body of our GET request
+    // unmarshal this into a new FriendListRequest struct
+    w.Header().Set("Content-Type", "application/json")
+    fmt.Println("Endpoint Hit: FriendsList")
+    var returnStatus ReturnStatus	
+    reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Body read error, %v", err)
+		returnStatus = ReturnStatus{false}
+		json.NewEncoder(w).Encode(returnStatus)
+		w.WriteHeader(500) // Return 500 Internal Server Error.
+		return
 	}
+    friendsListRequest = FriendListRequest{}
+    json.Unmarshal(reqBody, &friendsListRequest)
+	 
+	// Validations
+    // Validate that email ids in proper format
+    // Validate whether FriendListRequest is not empty
+        
+	// Prepare some hardcoded response
+	var returnFriendList ReturnFriendList
+	returnFriendList.Success = true
+	returnFriendList.Friends = append(returnFriendList.Friends,"abc@example")
+	returnFriendList.Friends = append(returnFriendList.Friends,"cde@example")
+	returnFriendList.Count = 2
+	json.NewEncoder(w).Encode(returnFriendList)
 	
-	var isSuccess bool=false
-	fmt.Println("Endpoint Hit: Create_Subscription")
+}
 
-	reqBody, _ := ioutil.ReadAll(r.Body)           // reading the request body
-    var CreateNewSubscription FirendSubscriptionList 
-    json.Unmarshal(reqBody, &CreateNewSubscription) 		//unmarshing body to JSON
+// Get Common Friends
+func getCommonFriends(w http.ResponseWriter, r *http.Request) {
+    // get the body of our GET request
+    // unmarshal this into a new FriendListRequest struct
+    w.Header().Set("Content-Type", "application/json")
+    fmt.Println("Endpoint Hit: CommonFriends")
+    var returnStatus ReturnStatus	
+    reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Body read error, %v", err)
+		returnStatus = ReturnStatus{false}
+		json.NewEncoder(w).Encode(returnStatus)
+		w.WriteHeader(500) // Return 500 Internal Server Error.
+		return
+	}
+    friendsRequest = FriendsRequest{}
+    json.Unmarshal(reqBody, &friendsRequest)
+	 
+	// Validations
+            
+	// Prepare some hardcoded response
+	var returnFriendList ReturnFriendList
+	returnFriendList.Success = true
+	returnFriendList.Friends = append(returnFriendList.Friends,"abc@example")
+	returnFriendList.Friends = append(returnFriendList.Friends,"cde@example")
+	returnFriendList.Count = 2
+	json.NewEncoder(w).Encode(returnFriendList)
+	
+}
+
+// Subscribe to Update
+func subscribeUpdate(w http.ResponseWriter, r *http.Request) {
+    // get the body of our POST request
+    // unmarshal this into a new Subscription struct
+    w.Header().Set("Content-Type", "application/json")
+    fmt.Println("Endpoint Hit: SubscribeUpdate")
+    var returnStatus ReturnStatus	
+    reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Body read error, %v", err)
+		returnStatus = ReturnStatus{false}
+		json.NewEncoder(w).Encode(returnStatus)
+		w.WriteHeader(500) // Return 500 Internal Server Error.
+		return
+	}
+    subscription = Subscription{}
+    json.Unmarshal(reqBody, &subscription)
+	 
+	// Validations
+    // Validate that email ids in proper format
+    // Validate whether FriendRequest is not empty
+    // Check whether they are friends already
+     	
+    returnStatus = ReturnStatus{true}
+    json.NewEncoder(w).Encode(returnStatus)
+	
+}
+
+// Block Updates
+func blockUpdates(w http.ResponseWriter, r *http.Request) {
+    // get the body of our POST request
+    // unmarshal this into a new FriendRequest struct
+    // append this to our FriendList array. 
+	w.Header().Set("Content-Type", "application/json")
+    fmt.Println("Endpoint Hit: BlockUpdate")
+    var returnStatus ReturnStatus	
+    reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Body read error, %v", err)
+		returnStatus = ReturnStatus{false}
+		json.NewEncoder(w).Encode(returnStatus)
+		w.WriteHeader(500) // Return 500 Internal Server Error.
+		return
+	}
+    subscription = Subscription{}
+    json.Unmarshal(reqBody, &subscription)
+	 
+	// Validations
+    returnStatus = ReturnStatus{true}
+    json.NewEncoder(w).Encode(returnStatus)
+	
+}
+// Receive Updates
+func receiveUpdates(w http.ResponseWriter, r *http.Request) {
+    // get the body of our POST request
+    // unmarshal this into a new Updates struct
+    // append this to our FriendList array. 
+	w.Header().Set("Content-Type", "application/json")
+    fmt.Println("Endpoint Hit: ReceiveUpdate")
+    var returnStatus ReturnStatus	
+    reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Body read error, %v", err)
+		returnStatus = ReturnStatus{false}
+		json.NewEncoder(w).Encode(returnStatus)
+		w.WriteHeader(500) // Return 500 Internal Server Error.
+		return
+	}
+    updates = Updates{}
+    json.Unmarshal(reqBody, &updates)
+	 
+	// Validations
     
-	var isPersonValid bool =true 					//later we have to check person is valid or not	
+    var updatesResponse UpdatesResponse
+    updatesResponse.Success = true
+	updatesResponse.Recipients = append(updatesResponse.Recipients,"abc@example")
+	updatesResponse.Recipients = append(updatesResponse.Recipients,"cde@example") 	
+    json.NewEncoder(w).Encode(updatesResponse)
 	
-	if(isPersonValid)	{
-		isSuccess=true 
-		FirendSubscription = append(FirendSubscription, CreateNewSubscription) // Create new friend
-	  json.NewEncoder(w).Encode(FirendSubscription) 
-	fmt.Println(CreateNewSubscription) 			// Display on Command prompt
-	
-	}	
-	CreateFrndJsonOBJ := CreateFriendJsonObj{
-		Success : isSuccess,			 
-		}
-
-		json.NewEncoder(w).Encode(CreateFrndJsonOBJ) // Display in Browser 
-
-
 }
 
-func Blocked_Subscription(w http.ResponseWriter, r *http.Request) {
-
-	
-	type CreateFriendJsonObj struct {  //Structure for Json Object response
-		Success bool
-	}
-	
-	var isSuccess bool=false
-	
-	// var reuqestBody=r.Body
-	reqBody, _ := ioutil.ReadAll(r.Body)           // reading the request body
-	fmt.Println(reqBody)	
-    var CreateBlockedSubscription FirendBlockedSubscriptionList 
-    json.Unmarshal(reqBody, &CreateBlockedSubscription) 		//unmarshing body to JSON
-    
-	var isPersonValid bool =true 					//later we have to check person is valid or not	
-	
-	if(isPersonValid)	{
-		isSuccess=true 
-		FirendBlockedSubscription = append(FirendBlockedSubscription, CreateBlockedSubscription) // Create new friend
-	//   json.NewEncoder(w).Encode(CreateBlockedSubscription) 
-	//   json.NewEncoder(w).Encode(FirendBlockedSubscription) 
-	fmt.Println(CreateBlockedSubscription) 			// Display on Command prompt
-	
-	}	
-	CreateFrndJsonOBJ := CreateFriendJsonObj{
-		Success : isSuccess,			 
-		}
-
-		json.NewEncoder(w).Encode(CreateFrndJsonOBJ) // Display in Browser 
-
-		 
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody))
-		decoder := json.NewDecoder(r.Body)
-		var data FirendBlockedSubscriptionList
-		err := decoder.Decode(&data)
-		if err != nil 	{
-			panic(err)
-		}
-		fmt.Println(data.RequestorEmailID)
-
-		for index, frnd := range FirendSubscription {
-			if frnd.RequestorEmailID == data.RequestorEmailID && frnd.TargetEmailID == data.TargetEmailID{
-				// updates our Articles array to remove the 
-				// article
-				FirendSubscription = append(FirendSubscription[:index], FirendSubscription[index+1:]...)
-			}
-		}
-		fmt.Println(data.RequestorEmailID)
+// Existing code from above
+func handleRequests() {
+    // creates a new instance of a mux router
+    myRouter := mux.NewRouter().StrictSlash(true)
+    // replace http.HandleFunc with myRouter.HandleFunc
+    myRouter.HandleFunc("/", homePage)
+	myRouter.HandleFunc("/FriendsConnection", createFriendsConnection).Methods("POST")
+	myRouter.HandleFunc("/SubscriptionUpdate", subscribeUpdate).Methods("POST")
+	myRouter.HandleFunc("/FriendsList", getFriendList)
+	myRouter.HandleFunc("/CommonFriends", getCommonFriends)
+	myRouter.HandleFunc("/BlockUpdates", blockUpdates).Methods("POST")
+	myRouter.HandleFunc("/ReceiveUpdates", receiveUpdates).Methods("POST")
+	// finally, instead of passing in nil, we want
+    // to pass in our newly created router as the second
+    // argument
+    log.Fatal(http.ListenAndServe(":10000", myRouter))
 }
 
 
-
-		func handleRequests() { 							//Request Section
-			
-			myRouter := mux.NewRouter().StrictSlash(true)    //Mapping Routes
-			myRouter.HandleFunc("/CreateNewFriend", create_NewFirend).Methods("POST") 	//Calling create_NewFirend method
-			myRouter.HandleFunc("/GetAllFriends", returnPersonFriendList).Methods("POST") //Calling returnPersonFriendList method
-			myRouter.HandleFunc("/GetCommonFriend", returnCommonFriendList).Methods("POST") 	//Calling method for gettting common friends 
-			myRouter.HandleFunc("/CreateUpdateSubscription", Create_Subscription).Methods("POST") 	//Calling method for gettting common friends 
-			myRouter.HandleFunc("/BlockedUpdateSubscription", Blocked_Subscription).Methods("POST") 	//Calling method for gettting common friends 
-			myRouter.HandleFunc("/UpdateSubscriptionList", returnUpdateFriendList).Methods("POST") 	//Calling method for gettting common friends 
-			log.Fatal(http.ListenAndServe(":10000", myRouter)) //API Server rout 
-		}
-
-
-
-func main() { 								//Main Function
-	
-    fmt.Println("Rest API v2.0 - Mux Routers") //Just Display on Command propmt  for ensuring Api server is started
-    Firends = []FirendList{
-        FirendList{EmailID: "amol@gmail.com",FrndEmailID: "Frndamol1@gmail.com"},
-		FirendList{EmailID: "amol@gmail.com",FrndEmailID: "Frndamol2@gmail.com"},
-		FirendList{EmailID: "amol1@gmail.com",FrndEmailID: "Frndamol11@gmail.com"},
-        FirendList{EmailID: "amol1@gmail.com",FrndEmailID: "Frndamol2@gmail.com"},
-	}
-
-	FirendSubscription = []FirendSubscriptionList{
-        FirendSubscriptionList{RequestorEmailID: "amol@gmail.com",TargetEmailID: "Frndamol1@gmail.com"},
-		FirendSubscriptionList{RequestorEmailID: "amol@gmail.com",TargetEmailID: "Frndamol2@gmail.com"},
-		
-	}
-
-	FirendBlockedSubscription = []FirendBlockedSubscriptionList{
-        FirendBlockedSubscriptionList{RequestorEmailID: "amol@gmail.com",TargetEmailID: "Frndamol1@gmail.com"},
-		FirendBlockedSubscriptionList{RequestorEmailID: "amol@gmail.com",TargetEmailID: "Frndamol2@gmail.com"},
-		
-	}
-	
-// 	Persons = []PersonList{
-//         PersonList{EmailID: "amol@gmail.com"},
-//         PersonList{EmailID: "amol_1@gmail.com"},
-//     }
-    handleRequests() 						//Calling Handale Request method
+func main() {
+    fmt.Println("Friends API v2.0 - Powered by Mux Routers")
+    handleRequests()
 }
-
